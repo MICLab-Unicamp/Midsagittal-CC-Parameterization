@@ -1,6 +1,6 @@
 dipy==1.11.0
 matplotlib==3.10.8
 numpy==2.2.5
-opencv-python==4.13.0.90
+opencv-python-headless==4.13.0.90
 scipy==1.15.3
 streamlit==1.55.0
