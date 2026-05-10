@@ -260,7 +260,7 @@ def click_button():
         data_param = {"points": dict_param_points, "values": dict_param_maps, "min_max": dict_min_max_maps}
         np.save(os.path.join(temp_dir_out.name, "data_param"), data_param)
 
-    mean_array_points_selec,shape_zero_img = mean_cc(dict_param_points, r_row=r_row, r_col=r_col)
+    mean_array_points_selec,shape_zero_img = mean_cc(dict_param_points, r_row, r_col, 10)
     dict_maps_mean_imgs,dict_maps_mean_cc_imgs,dict_maps_min_max = mean_param(dict_param_maps, dti_map_names, mean_array_points_selec, shape_zero_img, r_row=r_row, r_col=r_col)
 
     st.session_state.final_results = [dict_maps_mean_imgs,dict_maps_mean_cc_imgs,dict_maps_min_max]
