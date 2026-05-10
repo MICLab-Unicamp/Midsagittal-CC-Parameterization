@@ -4,8 +4,9 @@ import numpy as np
 from glob import glob
 from dipy.io.image import load_nifti
 import matplotlib.pyplot as plt
-from lib_param.param import param,param_points,mean_cc,mean_param
-from lib_param.vis import cut_imgs_mask,vis_param,vis_param_cc
+from lib_param.param import param,param_points
+from lib_param.param_manipulation import mean_cc,mean_param
+from lib_param.vis import crop_imgs_mask,vis_param_results
 import zipfile
 import tempfile
 
@@ -209,8 +210,8 @@ def click_button():
 
         cc_msp,_ = load_nifti(os.path.join(sub_path, cc_msp_fname))
         msp_slice = np.where(cc_msp==1)[0][0]
-        cc_msp_reorient = np.expand_dims(np.rot90(cc_msp[msp_slice][::-1]), axis=0)
-        cc_msp_cut,_,cut_range = cut_imgs_mask(cc_msp_reorient, cc_msp_reorient, pad=1)
+        cc_msp_reorient = np.rot90(cc_msp[msp_slice][::-1])
+        cc_msp_cut,_,cut_range = crop_imgs_mask(cc_msp_reorient, cc_msp_reorient, pad=1)
 
         points_sub = np.array(points_sub)
 
@@ -222,17 +223,17 @@ def click_button():
 
         plt.subplot(2,1,1)
         plt.title(f"{sid} - boundaries (gray) and centerline (red)")
-        plt.imshow(cc_msp_cut[0], cmap="gray")
-        plt.plot(boundaries[:,0]-cut_range[2].start, boundaries[:,1]-cut_range[1].start, linestyle='solid', linewidth=1, c="gray")
-        plt.plot(centerline[:,0]-cut_range[2].start, centerline[:,1]-cut_range[1].start, linestyle='solid', linewidth=1, c="r")
+        plt.imshow(cc_msp_cut, cmap="gray")
+        plt.plot(boundaries[:,0]-cut_range[1].start, boundaries[:,1]-cut_range[0].start, linestyle='solid', linewidth=1, c="gray")
+        plt.plot(centerline[:,0]-cut_range[1].start, centerline[:,1]-cut_range[0].start, linestyle='solid', linewidth=1, c="r")
         plt.axis('off')
 
         plt.subplot(2,1,2)
         plt.title(f"{sid} - initial (gray) and selected (red) sampling points")
-        plt.imshow(cc_msp_cut[0], cmap="gray")
+        plt.imshow(cc_msp_cut, cmap="gray")
         for points in points_sub:
-            plt.plot(points[:,0]-cut_range[2].start, points[:,1]-cut_range[1].start, 'o', markersize=1, c="gray")
-        plt.plot(points_sub[r_col:-r_col,r_row:-r_row,0]-cut_range[2].start, points_sub[r_col:-r_col,r_row:-r_row,1]-cut_range[1].start, 'o', markersize=1, color="r", linestyle='solid', linewidth=0.5)
+            plt.plot(points[:,0]-cut_range[1].start, points[:,1]-cut_range[0].start, 'o', markersize=1, c="gray")
+        plt.plot(points_sub[r_col:-r_col,r_row:-r_row,0]-cut_range[1].start, points_sub[r_col:-r_col,r_row:-r_row,1]-cut_range[0].start, 'o', markersize=1, color="r", linestyle='solid', linewidth=0.5)
         plt.axis('off')
 
         plt.tight_layout()
@@ -259,7 +260,7 @@ def click_button():
         data_param = {"points": dict_param_points, "values": dict_param_maps, "min_max": dict_min_max_maps}
         np.save(os.path.join(temp_dir_out.name, "data_param"), data_param)
 
-    mean_array_points_selec,_,shape_zero_img = mean_cc(dict_param_points, r_row=r_row, r_col=r_col)
+    mean_array_points_selec,shape_zero_img = mean_cc(dict_param_points, r_row=r_row, r_col=r_col)
     dict_maps_mean_imgs,dict_maps_mean_cc_imgs,dict_maps_min_max = mean_param(dict_param_maps, dti_map_names, mean_array_points_selec, shape_zero_img, r_row=r_row, r_col=r_col)
 
     st.session_state.final_results = [dict_maps_mean_imgs,dict_maps_mean_cc_imgs,dict_maps_min_max]
@@ -289,9 +290,9 @@ if "final_results" in st.session_state:
     param_img = dict_maps_mean_imgs[selected_dti_map]
     param_img_cc = dict_maps_mean_cc_imgs[selected_dti_map]
     min_max = dict_maps_min_max[selected_dti_map]
-    fig = vis_param(f"Average parameterized {selected_dti_map} map", param_img, min_max)
+    fig = vis_param_results(f"Average parameterized {selected_dti_map} map", param_img, min_max)
     st.pyplot(fig)
-    fig = vis_param_cc(f"{selected_dti_map} values mapped to average CC", param_img_cc, min_max)
+    fig = vis_param_results(f"{selected_dti_map} values mapped to average CC", param_img_cc, min_max)
     st.pyplot(fig)
 
 if uploaded_file:
