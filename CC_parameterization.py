@@ -4,8 +4,8 @@ import numpy as np
 from glob import glob
 from dipy.io.image import load_nifti
 import matplotlib.pyplot as plt
-from Streamlit_local.lib_param.param import param,param_points,mean_cc,mean_param
-from Streamlit_local.lib_param.util import cut_imgs_mask,vis_param,vis_param_cc
+from lib_param.param import param,param_points,mean_cc,mean_param
+from lib_param.vis import cut_imgs_mask,vis_param,vis_param_cc
 import zipfile
 import tempfile
 
@@ -117,7 +117,7 @@ st.subheader("Configuration summary")
 
 st.write("Review the parameterization configuration, selected inputs, and output options before running the method.")
 
-tmp_points,_ = param_points("", cc_msp_fname="Streamlit_local/example_cc.nii.gz", np_bound=np_bound, np_transv=np_transv)
+tmp_points,_ = param_points("", cc_msp_fname="example_cc.nii.gz", np_bound=np_bound, np_transv=np_transv)
 array_points_template = np.array(tmp_points)
 fig = plt.figure(figsize=(10,10))
 plt.title(f"({np_transv}$\\times${np_bound}) initial points $\\rightarrow$ ({np_transv-2*r_row}$\\times${np_bound-2*r_col}) selected points ")
