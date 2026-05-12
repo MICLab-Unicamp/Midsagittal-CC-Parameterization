@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import numpy as np
-from glob import glob
 import pandas as pd
 from lib_param.param import param
 from lib_param.param_manipulation import mean_cc,mean_param,map_to_voxel
@@ -21,19 +20,21 @@ st.write("""
 
 st.write("")
 
+# Validation flags
 configuration_valid = True
 show_config = True
 
 with st.container(border=True):
-    #==============================
+    #==========================
     st.markdown("##### INPUTS")
-    #==============================
+    #==========================
 
     st.write("Specify the dataset path and required files for each individual.")
 
-    data_path = st.text_input("Dataset path (should contain one folder per individual, each with the required .nii or .nii.gz files):",
+    data_path = st.text_input("Dataset path (should contain one folder per individual, each with the required `.nii` or `.nii.gz` files):",
                             "/home/caio/nas_caio/Datasets_param_application/age_sex_analysis/paper_6/IXI_test_streamlit")
 
+    # Dataset path validation
     data_dir = Path(data_path)
     if not data_path.strip():
         st.error("Dataset path cannot be empty.")
@@ -50,7 +51,7 @@ with st.container(border=True):
             st.error("No folders were found in the dataset path.")
             configuration_valid = False
         else:
-            st.success(f"{len(subject_dirs)} folders detected in the dataset path.")
+            st.success(f"{len(subject_dirs)} subject folder(s) detected in the dataset path.")
 
     #---------------------------------------
 
@@ -69,6 +70,7 @@ with st.container(border=True):
     if tmp_dti_map_names:
         dti_map_names = [f.strip() for f in tmp_dti_map_names.split(",") if f.strip()]
 
+    # Diffusion maps validation
     if not tmp_dti_map_fnames.strip():
         st.error("At least one diffusion map filename must be provided.")
         configuration_valid = False
@@ -98,6 +100,7 @@ with st.container(border=True):
     st.checkbox("Input `.csv` file.", key="csv_file")
     csv_path = st.text_input("Path of the `.csv` file:", f"path/info.csv", disabled=not st.session_state.csv_file)
 
+    # CSV file validation
     csv_ids = None
     if st.session_state.csv_file:
         csv_file = Path(csv_path)
@@ -113,12 +116,14 @@ with st.container(border=True):
         else:
             try:
                 df_csv = pd.read_csv(csv_file)
+                df_csv.columns = df_csv.columns.str.replace('\ufeff', '')
                 required_columns = {"id", "group"}
                 if not required_columns.issubset(df_csv.columns):
                     st.error("CSV file must contain 'id' and 'group' columns.")
                     configuration_valid = False
                 else:
-                    csv_ids = set(df_csv["id"].astype(str))
+                    # Get IDs from the input .csv file
+                    csv_ids = set(df_csv["id"].dropna().astype(str))
                     if len(csv_ids) == 0:
                         st.error("CSV file does not contain any subject IDs.")
                         configuration_valid = False
@@ -128,12 +133,64 @@ with st.container(border=True):
                 st.error(f"Error reading CSV file: {e}")
                 configuration_valid = False
 
+    #---------------------------------------
+
+    # Subjects validation
+    st.write("")
+    valid_subjects = []
+    missing_subjects = []
+    missing_csv_subjects = []
+    missing_files_summary = {}
+    if configuration_valid:
+        dataset_subject_ids = {subj_dir.name for subj_dir in subject_dirs}
+        # Check whether CSV subjects exist in dataset
+        if csv_ids is not None:
+            missing_csv_subjects = sorted(csv_ids - dataset_subject_ids)
+        for subj_dir in subject_dirs:
+            sid = subj_dir.name
+            # Skip subjects not listed in CSV
+            if csv_ids is not None and sid not in csv_ids:
+                continue
+            missing_files = []
+            # CC mask
+            cc_path = subj_dir / cc_msp_fname
+            if not cc_path.exists():
+                missing_files.append(cc_msp_fname)
+            # DTI maps
+            for fname in dti_map_fnames:
+                map_path = subj_dir / fname
+                if not map_path.exists():
+                    missing_files.append(fname)
+            if len(missing_files) > 0:
+                missing_subjects.append(sid)
+                missing_files_summary[sid] = missing_files
+            else:
+                valid_subjects.append(sid)
+    if configuration_valid:
+        if len(missing_csv_subjects) > 0:
+            st.warning(f"{len(missing_csv_subjects)} subject(s) listed in the CSV were not found in the dataset and will be ignored.")
+            with st.expander("Show CSV subjects not found in dataset", expanded=False):
+                for sid in missing_csv_subjects:
+                    st.write(f"- {sid}")
+        if len(valid_subjects) == 0:
+            st.error("No valid subjects were found.")
+            configuration_valid = False
+        else:
+            st.success(f"{len(valid_subjects)} valid subjects detected.")
+            if len(missing_subjects) > 0:
+                st.warning(f"{len(missing_subjects)} subject(s) are missing required files and will be ignored.")
+                with st.expander("Show missing files by subject", expanded=False):
+                    for subj_id, files in missing_files_summary.items():
+                        st.markdown(f"**{subj_id}**")
+                        for f in files:
+                            st.write(f"- {f}")
+
 st.write("")
 
 with st.container(border=True):
-    #======================================
+    #==================================
     st.markdown("##### OUTPUT OPTIONS")
-    #======================================
+    #==================================
 
     st.write("""
             By default, the method saves a 4D `.nii.gz` file containing the parameterization
@@ -214,9 +271,9 @@ with st.container(border=True):
 st.write("")
 
 with st.container(border=True):
-    #===========================================
+    #=======================================
     st.markdown("##### ADVANCED PARAMETERS")
-    #===========================================
+    #=======================================
     
     st.info("""
                The parameters below correspond to the validated configuration of the proposed method
@@ -296,15 +353,7 @@ if "clicked" not in st.session_state:
 def click_button():
     st.session_state.clicked = True
 
-    # Get the list of IDs from the input .csv file
-    if st.session_state.csv_file:
-        df = pd.read_csv(csv_path)
-        sid_list = df["id"].tolist()
-    # If no .csv file is provided, consider all folders in the dataset path as individuals and extract their IDs from the folder names
-    else:
-        list_subs = sorted(glob(os.path.join(data_path, '*/')))
-        sid_list = [os.path.normpath(sub_path).split(os.sep)[-1] for sub_path in list_subs]
-    n_subs = len(sid_list)
+    n_subs = len(valid_subjects)
 
     # Dictionaries to store parameterization results
     dict_param_points = {}
@@ -312,7 +361,7 @@ def click_button():
     dict_min_max_maps = {}
     
     # Run the parameterization for each individual
-    for i,sid in enumerate(sid_list):
+    for i,sid in enumerate(valid_subjects):
         sub_path = os.path.join(data_path, sid)
 
         # Parameterization
@@ -340,7 +389,7 @@ def click_button():
         # Plot each individual boundaries and sampling points
         fig = vis_param(sub_path, sid, cc_msp_fname, points_sub, r_row, r_col)
         vis_info.write('**Last parameterization:**')
-        fig_parcs.pyplot(fig)
+        fig_param.pyplot(fig)
 
     # Save parameterization results in a single .npy file
     if st.session_state.save_npy:
@@ -367,7 +416,7 @@ def click_button():
             map_to_voxel(dict_param_maps, mean_array_points_selec, shape_zero_img, n_subs, r_row, r_col, data_path, mfac_param)
             # Save ID list in a .txt file for reference
             with open(os.path.join(data_path, "ids.txt"), "w") as f:
-                for sid in sid_list:
+                for sid in valid_subjects:
                     f.write(f"{sid}\n")
 
         # Save individual parameterization results in separate .nii.gz files
@@ -391,7 +440,7 @@ st.button("**Run parameterization**", type="primary", on_click=click_button, dis
 latest_iteration = st.empty()
 bar = st.empty()
 vis_info = st.empty()
-fig_parcs = st.empty()
+fig_param = st.empty()
 
 # Initialize and finalize progress bar
 if st.session_state.clicked:
@@ -416,8 +465,7 @@ if "final_results" in st.session_state:
     # Check whether to show mean results by group or across all individuals
     use_groups = False
     if st.session_state.csv_file:
-        df = pd.read_csv(csv_path)
-        group_list = df["group"].unique().tolist()
+        group_list = df_csv["group"].unique().tolist()
         if len(group_list) > 1:
             use_groups = True
 
@@ -430,7 +478,7 @@ if "final_results" in st.session_state:
 
         for group_name in group_list:
             # IDs belonging to the group
-            group_ids = df.loc[df["group"] == group_name, "id"].tolist()
+            group_ids = df_csv.loc[df_csv["group"] == group_name, "id"].tolist()
 
             # Filter dict_param_maps
             dict_param_maps_group = {
@@ -475,7 +523,7 @@ if "final_results" in st.session_state:
         if use_groups:
             title += f" ({group_name})"
         param_img = group_results[group_name]["mean_imgs"][selected_dti_map]
-        fig = vis_param_results(title, param_img, min_max)
+        fig = vis_param_results(title, selected_dti_map, param_img, min_max)
         st.pyplot(fig)
 
     # Then show all average CC images
@@ -484,5 +532,5 @@ if "final_results" in st.session_state:
         if use_groups:
             title += f" ({group_name})"
         param_img_cc = group_results[group_name]["mean_cc_imgs"][selected_dti_map]
-        fig = vis_param_results(title, param_img_cc, min_max)
+        fig = vis_param_results(title, selected_dti_map, param_img_cc, min_max)
         st.pyplot(fig)

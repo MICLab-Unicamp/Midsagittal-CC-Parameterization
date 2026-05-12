@@ -59,9 +59,10 @@ def vis_param(sub_path, sid, cc_msp_fname, points_sub, r_row, r_col):
 
 
 # Plot of the parameterized images
-def vis_param_results(title, param_img, min_max):
+def vis_param_results(title, dti_map, param_img, min_max):
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
+    from matplotlib.ticker import ScalarFormatter
 
     cmap = dark_jet_colormap()
     fig = plt.figure(figsize=(10,5))
@@ -72,6 +73,12 @@ def vis_param_results(title, param_img, min_max):
     cbar.ax.tick_params(labelsize=15)
     cbar.locator = MaxNLocator(nbins=4)
     cbar.update_ticks()
+    # Format colorbar labels as scientific notation (x × 10^y)
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_powerlimits((-2, 2))  # Use scientific notation when values are <10^-2 or >10^2
+    cbar.ax.xaxis.set_major_formatter(formatter)  # For horizontal colorbar
+    if dti_map != "FA":
+        cbar.set_label("mm²/s", fontsize=10)
     plt.tight_layout()
 
     return fig
