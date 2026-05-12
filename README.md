@@ -1,5 +1,9 @@
 # Midsagittal Corpus Callosum Parameterization
 
-**UNDER CONSTRUCTION**
+⚠️ **THIS REPOSITORY IS STILL UNDER DEVELOPMENT**
 
-To access the online demo, go to this [link](https://midsagittal-cc-parameterization.streamlit.app/).
+This repository contains a Streamlit demo of the proposed corpus callosum parameterization method.
+
+To access the online demo, visit:
+
+https://cc-parameterization.streamlit.app/
