@@ -29,7 +29,7 @@ The method was developed and evaluated using diffusion MRI data preprocessed wit
 
 In our experiments, the midsagittal CC segmentation was obtained by combining automated [TractSeg](https://github.com/mic-dkfz/tractseg) bundle segmentation with targeted post-processing to isolate only the midsagittal section of the CC. The midsagittal slice was identified from the FA maps based on the diffusion characteristics of the interhemispheric fissure [[1]](https://doi.org/10.1117/12.911619).
 
-### Notes
+#### Notes
 
 The robustness of the method to alternative preprocessing strategies remains to be investigated. In particular, differences in voxel resolution may influence the choice of the parameterization configuration. All experiments in the associated manuscript were performed using diffusion images resampled to 1.25 mm isotropic resolution.
 
