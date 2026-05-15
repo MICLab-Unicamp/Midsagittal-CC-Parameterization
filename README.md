@@ -8,31 +8,6 @@ The approach is computationally efficient, avoids explicit nonlinear inter-subje
 
 The manuscript describing this method is currently under submission.
 
-## Input requirements
-
-For each subject, the method requires the following inputs:
-
-- A binary midsagittal CC mask
-- Diffusion-derived maps (for example, FA, MD, RD, and AD maps)
-
-### Recommended preprocessing
-
-The method was developed and evaluated using diffusion MRI data preprocessed with a consistent pipeline. We recommend the following preprocessing steps before running the parameterization:
-
-1. Denoising
-2. Eddy-current and motion correction
-3. Rigid alignment to the MNI152 template (translation and rotation only), to reduce variability in midsagittal slice selection caused by differences in head positioning
-4. Resampling to 1.25 mm isotropic resolution
-5. Brain extraction
-6. Diffusion tensor reconstruction and diffusion maps generation
-7. Midsagittal CC segmentation (or CC segmentation + midsagittal slice identification)
-
-In our experiments, the midsagittal CC segmentation was obtained by combining automated [TractSeg](https://github.com/mic-dkfz/tractseg) bundle segmentation with targeted post-processing to isolate only the midsagittal section of the CC. The midsagittal slice was identified from the FA maps based on the diffusion characteristics of the interhemispheric fissure [[1]](https://doi.org/10.1117/12.911619).
-
-#### Notes
-
-The robustness of the method to alternative preprocessing strategies remains to be investigated. In particular, differences in voxel resolution may influence the choice of the parameterization configuration. All experiments in the associated manuscript were performed using diffusion images resampled to 1.25 mm isotropic resolution.
-
 ## Online demo
 
 An online Streamlit demo is available, allowing you to test the parameterization method using your own uploaded images.
@@ -96,3 +71,28 @@ A few notes about the Streamlit application:
 - The local application may exhibit slower performance on Windows than on Linux.
 - To reset the application state and start a clean session, simply refresh the browser page.
 - During processing, Streamlit shows an activity indicator in the top-right corner of the page. This interface also allows you to stop the current execution if necessary.
+
+## Input requirements
+
+For each subject, the method requires the following inputs:
+
+- A binary midsagittal CC mask
+- Diffusion-derived maps (for example, FA, MD, RD, and AD maps)
+
+### Recommended preprocessing
+
+The method was developed and evaluated using diffusion MRI data preprocessed with a consistent pipeline. We recommend the following preprocessing steps before running the parameterization:
+
+1. Denoising
+2. Eddy-current and motion correction
+3. Rigid alignment to the MNI152 template (translation and rotation only), to reduce variability in midsagittal slice selection caused by differences in head positioning
+4. Resampling to 1.25 mm isotropic resolution
+5. Brain extraction
+6. Diffusion tensor reconstruction and diffusion maps generation
+7. Midsagittal CC segmentation (or CC segmentation + midsagittal slice identification)
+
+In our experiments, the midsagittal CC segmentation was obtained by combining automated [TractSeg](https://github.com/mic-dkfz/tractseg) bundle segmentation with targeted post-processing to isolate only the midsagittal section of the CC. The midsagittal slice was identified from the FA maps based on the diffusion characteristics of the interhemispheric fissure [[1]](https://doi.org/10.1117/12.911619).
+
+#### Notes
+
+The robustness of the method to alternative preprocessing strategies remains to be investigated. In particular, differences in voxel resolution may influence the choice of the parameterization configuration. All experiments in the associated manuscript were performed using diffusion images resampled to 1.25 mm isotropic resolution.
