@@ -1,0 +1,6 @@
+opencv==4.13.0
+dipy==1.11.0
+streamlit==1.55.0
+scipy==1.15.3
+numpy==2.2.5
+matplotlib==3.10.8
