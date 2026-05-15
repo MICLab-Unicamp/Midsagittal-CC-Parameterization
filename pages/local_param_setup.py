@@ -18,6 +18,25 @@ st.write("""
          Mean parameterization results will be displayed after processing.
          """)
 
+st.write("""
+         **Required inputs:**
+         - Binary midsagittal CC mask
+         - Diffusion-derived maps (FA, MD, etc.)
+         """)
+
+expander_preproc = st.expander('Recommended preprocessing', expanded=False)
+expander_preproc.write("""
+                       - Denoising
+                       - Eddy-current and motion correction
+                       - Rigid alignment to the MNI152
+                       - Resampling to 1.25 mm isotropic resolution
+                       - Brain extraction
+                       - Diffusion tensor reconstruction and diffusion maps generation
+                       - Midsagittal CC segmentation ([TractSeg](https://github.com/mic-dkfz/tractseg) + post-processing was used in our experiments)
+
+                       _The method was validated using data preprocessed with the pipeline described in the manuscript. Different preprocessing strategies may affect the results._
+                       """)
+
 st.write("")
 
 # Validation flags
@@ -32,7 +51,7 @@ with st.container(border=True):
     st.write("Specify the dataset path and required files for each individual.")
 
     data_path = st.text_input("Dataset path (should contain one folder per individual, each with the required `.nii` or `.nii.gz` files):",
-                            "/home/caio/nas_caio/Datasets_param_application/age_sex_analysis/paper_6/IXI_test_streamlit")
+                              "/path/to/your/dataset")
 
     # Dataset path validation
     data_dir = Path(data_path)
@@ -53,20 +72,39 @@ with st.container(border=True):
         else:
             st.success(f"{len(subject_dirs)} subject folder(s) detected in the dataset path.")
 
+    with st.expander("Expected dataset structure", expanded=False):
+
+        st.code("""
+                dataset/
+                ├── subj_01/
+                │   ├── CC_mask.nii.gz
+                │   ├── FA.nii.gz
+                │   ├── MD.nii.gz
+                │   ├── RD.nii.gz
+                │   └── AD.nii.gz
+                │
+                ├── subj_02/
+                │   ├── CC_mask.nii.gz
+                │   ├── FA.nii.gz
+                │   ├── MD.nii.gz
+                │   ├── RD.nii.gz
+                │   └── AD.nii.gz
+                """)
+
     #---------------------------------------
 
     expander_fnames = st.expander("Specify required filenames", expanded=False)
 
     cc_msp_fname = expander_fnames.text_input("Midsagittal CC mask filename:",
-                                            "CC_mask_tractseg_msp.nii.gz")
+                                              "CC_mask.nii.gz")
 
     tmp_dti_map_fnames = expander_fnames.text_input("Diffusion map filenames (comma-separated):",
-                                                    "DTI/dipy_dti_FA.nii.gz, DTI/dipy_dti_MD.nii.gz, DTI/dipy_dti_RD.nii.gz, DTI/dipy_dti_AD.nii.gz")
+                                                    "FA.nii.gz, MD.nii.gz, RD.nii.gz, AD.nii.gz")
     if tmp_dti_map_fnames:
         dti_map_fnames = [f.strip() for f in tmp_dti_map_fnames.split(",") if f.strip()]
 
     tmp_dti_map_names = expander_fnames.text_input("Diffusion map names (comma-separated, same order as filenames):",
-                                                "FA, MD, RD, AD")
+                                                   "FA, MD, RD, AD")
     if tmp_dti_map_names:
         dti_map_names = [f.strip() for f in tmp_dti_map_names.split(",") if f.strip()]
 
@@ -98,7 +136,7 @@ with st.container(border=True):
             """)
 
     st.checkbox("Input `.csv` file.", key="csv_file")
-    csv_path = st.text_input("Path of the `.csv` file:", f"path/info.csv", disabled=not st.session_state.csv_file)
+    csv_path = st.text_input("Path of the `.csv` file:", f"path/to/your/file.csv", disabled=not st.session_state.csv_file)
 
     # CSV file validation
     csv_ids = None
@@ -115,7 +153,7 @@ with st.container(border=True):
             configuration_valid = False
         else:
             try:
-                df_csv = pd.read_csv(csv_file)
+                df_csv = pd.read_csv(csv_file, sep=None, engine='python')
                 df_csv.columns = df_csv.columns.str.replace('\ufeff', '')
                 required_columns = {"id", "group"}
                 if not required_columns.issubset(df_csv.columns):
