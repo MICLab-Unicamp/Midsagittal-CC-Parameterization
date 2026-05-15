@@ -531,7 +531,7 @@ fig_param = st.empty()
 if st.session_state.clicked:
     latest_iteration.write('**:green[Completed!]**')
     bar.progress(100)
-    if any(selected_outputs):
+    if "output" in st.session_state:
         st.write("")
         st.download_button(label="**Click to download the results**", data=st.session_state.output, file_name='output.zip', mime='zip', key="download_zip", type='primary')
 else:
