@@ -508,9 +508,10 @@ def click_button():
                     zipf.write(file_path, os.path.relpath(file_path, temp_dir_out.name))
 
     # Provide a download button to download the generated .zip file
-    with open(output_zip_file, "rb") as f:
-        zip_file_bytes = f.read()
-    st.session_state.output=zip_file_bytes
+    if any(selected_outputs):
+        with open(output_zip_file, "rb") as f:
+            zip_file_bytes = f.read()
+        st.session_state.output=zip_file_bytes
 
     temp_dir_out.cleanup()
 
@@ -530,8 +531,9 @@ fig_param = st.empty()
 if st.session_state.clicked:
     latest_iteration.write('**:green[Completed!]**')
     bar.progress(100)
-    st.write("")
-    st.download_button(label="**Click to download the results**", data=st.session_state.output, file_name='output.zip', mime='zip', key="download_zip", type='primary')
+    if any(selected_outputs):
+        st.write("")
+        st.download_button(label="**Click to download the results**", data=st.session_state.output, file_name='output.zip', mime='zip', key="download_zip", type='primary')
 else:
     bar.progress(0)
 
